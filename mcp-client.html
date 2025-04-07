@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Context Protocol (MCP) Simulator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+
+        h1 {
+            color: #4a4d82;
+            text-align: center;
+        }
+
+        .info-box {
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #ping-btn {
+            background-color: #4a4d82;
+        }
+
+        #pong-btn {
+            background-color: #6469a8;
+        }
+
+        #count-btn {
+            background-color: #7f85cc;
+        }
+
+        #prompt-btn {
+            background-color: #6469a8;
+        }
+
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #eaeaea;
+            border-radius: 6px;
+            background-color: #fafafa;
+            font-family: monospace;
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .client {
+            background-color: #f0f5ff;
+            border-left: 4px solid #4a4d82;
+            margin-right: 40px;
+        }
+
+        .server {
+            background-color: #f6ffed;
+            border-left: 4px solid #52c41a;
+            margin-left: 40px;
+        }
+
+        .error {
+            background-color: #fff1f0;
+            border-left: 4px solid #f5222d;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fafafa;
+            border-radius: 4px;
+        }
+
+        #server-status {
+            font-weight: bold;
+        }
+
+        .connected {
+            color: #52c41a;
+        }
+
+        .disconnected {
+            color: #f5222d;
+        }
+
+        .visualization {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+            height: 100px;
+        }
+
+        .client-box,
+        .server-box {
+            width: 120px;
+            height: 70px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .client-box {
+            background-color: #4a4d82;
+            color: white;
+        }
+
+        .server-box {
+            background-color: #52c41a;
+            color: white;
+        }
+
+        .arrow-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        .arrow {
+            position: absolute;
+            height: 3px;
+            background-color: #d9d9d9;
+            top: 50%;
+            left: 10px;
+            right: 10px;
+            transform: translateY(-50%);
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 10px solid #d9d9d9;
+        }
+
+        .data-packet {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            background-color: #1890ff;
+            border-radius: 10px;
+            color: white;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .client-to-server {
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .server-to-client {
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%) rotate(180deg);
+        }
+
+        .active {
+            opacity: 1;
+        }
+
+        .animate-left-to-right {
+            animation: moveLeftToRight 1s ease-in-out;
+        }
+
+        .animate-right-to-left {
+            animation: moveRightToLeft 1s ease-in-out;
+        }
+
+        @keyframes moveLeftToRight {
+            0% {
+                left: 20%;
+            }
+
+            100% {
+                left: 80%;
+            }
+        }
+
+        @keyframes moveRightToLeft {
+            0% {
+                left: 80%;
+            }
+
+            100% {
+                left: 20%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Model Context Protocol (MCP) Simulator</h1>
+
+        <div class="info-box">
+            This simulator demonstrates a simple implementation of Anthropic's Model Context Protocol (MCP).
+            The communication follows the protocol where the client sends commands and the server responds accordingly.
+        </div>
+
+        <div class="visualization">
+            <div class="client-box">Client</div>
+
+            <div class="arrow-container">
+                <div class="arrow client-to-server"></div>
+                <div id="client-packet" class="data-packet">ping</div>
+
+                <div class="arrow server-to-client"></div>
+                <div id="server-packet" class="data-packet">pong</div>
+            </div>
+
+            <div class="server-box">MCP Server</div>
+        </div>
+
+        <div class="control-panel">
+            <button id="ping-btn">Send PING</button>
+            <button id="pong-btn">Send PONG</button>
+            <button id="count-btn">Get COUNT</button>
+            <button id="prompt-btn">Show PROMPT</button>
+        </div>
+
+        <div class="log-container" id="log">
+            <div class="message">Welcome to the Model Context Protocol Simulator. Click a button to start.</div>
+        </div>
+
+        <div class="status-bar">
+            <div>Server Status: <span id="server-status" class="disconnected">Disconnected</span></div>
+            <div>Session ID: <span id="session-id">None</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const MCP_ENDPOINT = 'http://localhost:8080';
+        let serverConnected = false;
+        let sessionId = null;
+
+        // DOM elements
+        const log = document.getElementById('log');
+        const serverStatus = document.getElementById('server-status');
+        const sessionIdElement = document.getElementById('session-id');
+        const clientPacket = document.getElementById('client-packet');
+        const serverPacket = document.getElementById('server-packet');
+
+        // Generate a random session ID
+        function generateSessionId() {
+            return 'session-' + Math.random().toString(36).substring(2, 15);
+        }
+
+        // Helper functions for logging
+        function getTimestamp() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+
+        function addLogMessage(message, type) {
+            const msgElement = document.createElement('div');
+            msgElement.className = `message ${type}`;
+
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = getTimestamp();
+
+            const content = document.createElement('div');
+            content.textContent = message;
+
+            msgElement.appendChild(timestamp);
+            msgElement.appendChild(content);
+            log.appendChild(msgElement);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Animation functions
+        function animateClientToServer(command) {
+            clientPacket.textContent = command;
+            clientPacket.classList.add('active');
+            clientPacket.classList.add('animate-left-to-right');
+
+            setTimeout(() => {
+                clientPacket.classList.remove('active');
+                clientPacket.classList.remove('animate-left-to-right');
+            }, 1000);
+        }
+
+        function animateServerToClient(response) {
+            serverPacket.textContent = response;
+            serverPacket.classList.add('active');
+            serverPacket.classList.add('animate-right-to-left');
+
+            setTimeout(() => {
+                serverPacket.classList.remove('active');
+                serverPacket.classList.remove('animate-right-to-left');
+            }, 1000);
+        }
+
+        // MCP communication
+        async function sendMCPRequest(command) {
+            // Initialize session if not already done
+            if (!sessionId) {
+                sessionId = generateSessionId();
+                sessionIdElement.textContent = sessionId;
+            }
+
+            // Animate client to server
+            animateClientToServer(command);
+
+            try {
+                addLogMessage(`Sending command: ${command}`, 'client');
+
+                const response = await fetch(`${MCP_ENDPOINT}/ping-pong`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ command: command, session_id: sessionId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update connection status
+                if (!serverConnected) {
+                    serverConnected = true;
+                    serverStatus.textContent = 'Connected';
+                    serverStatus.className = 'connected';
+                }
+
+                // Handle response
+                if (data.error) {
+                    addLogMessage(`Error: ${data.error}`, 'error');
+                } else {
+                    const responseText = data.data;
+                    addLogMessage(`Server responded: ${responseText}`, 'server');
+                    animateServerToClient(responseText);
+
+                    // Update sessionId if the server returns one
+                    if (data.session_id) {
+                        sessionId = data.session_id;
+                        sessionIdElement.textContent = sessionId;
+                    }
+                }
+
+            } catch (error) {
+                addLogMessage(`Communication error: ${error.message}`, 'error');
+                serverStatus.textContent = 'Disconnected';
+                serverStatus.className = 'disconnected';
+                serverConnected = false;
+            }
+        }
+
+        // Function to get the prompt from the server
+        async function getPrompt() {
+            try {
+                // Ask user for prompt name
+                const promptName = prompt("Enter prompt name to retrieve:", "");
+                
+                if (!promptName) {
+                    addLogMessage("Prompt request canceled or empty prompt name", "error");
+                    return;
+                }
+                
+                addLogMessage(`Requesting prompt: "${promptName}"...`, 'client');
+                animateClientToServer('prompt');
+
+                const response = await fetch(`${MCP_ENDPOINT}/ping-pong?prompt_name=${encodeURIComponent(promptName)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update connection status
+                if (!serverConnected) {
+                    serverConnected = true;
+                    serverStatus.textContent = 'Connected';
+                    serverStatus.className = 'connected';
+                }
+
+                // Handle response
+                if (data.error) {
+                    addLogMessage(`Error: ${data.error}`, 'error');
+                } else {
+                    const promptDetails = data.description ? 
+                        `"${data.prompt}": ${data.description}` : 
+                        data.prompt || "No prompt details returned";
+                        
+                    addLogMessage(`Server prompt: ${promptDetails}`, 'server');
+                    animateServerToClient('prompt');
+                }
+
+            } catch (error) {
+                addLogMessage(`Communication error: ${error.message}`, 'error');
+                serverStatus.textContent = 'Disconnected';
+                serverStatus.className = 'disconnected';
+                serverConnected = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('ping-btn').addEventListener('click', () => sendMCPRequest('ping'));
+        document.getElementById('pong-btn').addEventListener('click', () => sendMCPRequest('pong'));
+        document.getElementById('count-btn').addEventListener('click', () => sendMCPRequest('count'));
+        document.getElementById('prompt-btn').addEventListener('click', getPrompt);
+
+        // Check connection on startup
+        addLogMessage('Initializing Model Context Protocol simulator...', 'message');
+    </script>
+</body>
+
+</html>
