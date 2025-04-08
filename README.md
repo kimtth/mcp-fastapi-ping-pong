@@ -1,10 +1,10 @@
-# 🏓 MCP Ping-Pong Server with FastAPI
+# 🏓 MCP Ping-Pong Server by Remote call
 
 Experimental and educational Ping-Pong server demonstrating MCP (Model Context Protocol) calls via FastAPI
 
 ## Features
 
-- ✅ FastAPI backend for high-performance API endpoints
+- ✅ FastAPI backend for Remote MCP call through API endpoints
 - 🔄 MCP integration for command handling
 - 🔐 Thread-safe session management
 

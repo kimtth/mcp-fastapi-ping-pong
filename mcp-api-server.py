@@ -3,6 +3,7 @@ import threading
 from fastapi import FastAPI, Request
 from fastmcp import FastMCP
 from fastapi.middleware.cors import CORSMiddleware
+from mcp import ListPromptsResult
 from mcp.shared.memory import (
     create_connected_server_and_client_session as client_session,
 )
@@ -47,7 +48,10 @@ async def mcp_handler(command: str, session_id: str) -> str:
 @mcp.prompt("ping-pong")
 async def ping_pong_prompt() -> str:
     """Prompt for the ping-pong tool"""
-    return "This is a simple ping-pong tool. Use 'ping' or 'pong' to interact."
+    prompt_content = (
+        "This is a simple ping-pong tool. Use 'ping' or 'pong' to interact."
+    )
+    return prompt_content
 
 
 @app.get("/ping-pong")
@@ -57,10 +61,20 @@ async def ping_pong(request: Request) -> Dict[str, str]:
         return {"error": "prompt_name is required"}
 
     async with client_session(mcp._mcp_server) as client:
-        list_prompts = await client.list_prompts()
-        for prompt in list_prompts.prompts:
-            if prompt.name == prompt_name:
-                return {"prompt": prompt.name, "description": prompt.description}
+        try:
+            list_prompts: ListPromptsResult = await client.list_prompts()
+            for prompt in list_prompts.prompts:
+                if prompt.name == prompt_name:
+                    print(type(prompt))
+                    prompt_msg = await client.get_prompt(prompt.name)
+                    prompt_content = prompt_msg.messages[0].content.text
+                    return {
+                        "prompt": prompt.name,
+                        "description": prompt.description,
+                        "content": prompt_content,
+                    }
+        except Exception as e:
+            return {"error": str(e)}
         return {"error": "Prompt not found"}
 
 

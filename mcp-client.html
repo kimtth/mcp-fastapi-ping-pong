@@ -459,7 +459,7 @@
                     addLogMessage(`Error: ${data.error}`, 'error');
                 } else {
                     const promptDetails = data.description ? 
-                        `"${data.prompt}": ${data.description}` : 
+                        `"${data.prompt}": ${data.description}: ${data.content}` : 
                         data.prompt || "No prompt details returned";
                         
                     addLogMessage(`Server prompt: ${promptDetails}`, 'server');
